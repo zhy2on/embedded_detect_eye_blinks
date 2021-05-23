@@ -15,7 +15,38 @@ import time
 import dlib
 import cv2
 
+#### show_digit ####
+OFFSET_LEFT = 1
+OFFSET_TOP = 2
 
+NUMS =[1,1,1,1,0,1,1,0,1,1,0,1,1,1,1,  # 0
+       0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,  # 1
+       1,1,1,0,0,1,0,1,0,1,0,0,1,1,1,  # 2
+       1,1,1,0,0,1,1,1,1,0,0,1,1,1,1,  # 3
+       1,0,0,1,0,1,1,1,1,0,0,1,0,0,1,  # 4
+       1,1,1,1,0,0,1,1,1,0,0,1,1,1,1,  # 5
+       1,1,1,1,0,0,1,1,1,1,0,1,1,1,1,  # 6
+       1,1,1,0,0,1,0,1,0,1,0,0,1,0,0,  # 7
+       1,1,1,1,0,1,1,1,1,1,0,1,1,1,1,  # 8
+       1,1,1,1,0,1,1,1,1,0,0,1,0,0,1]  # 9
+
+# Displays a single digit (0-9)
+def show_digit(val, xd, yd, r, g, b):
+  offset = val * 15
+  for p in range(offset, offset + 15):
+    xt = p % 3
+    yt = (p-offset) // 3
+    sense.set_pixel(xt+xd, yt+yd, r*NUMS[p], g*NUMS[p], b*NUMS[p])
+
+# Displays a two-digits positive number (0-99)
+def show_number(val, r, g, b):
+  abs_val = abs(val)
+  tens = abs_val // 10
+  units = abs_val % 10
+  if (abs_val > 9): show_digit(tens, OFFSET_LEFT, OFFSET_TOP, r, g, b)
+  show_digit(units, OFFSET_LEFT+4, OFFSET_TOP, r, g, b)
+
+#### detect_py #####
 def eye_aspect_ratio(eye):
     # compute the euclidean distances between the two sets of
     # vertical eye landmarks (x, y)-coordinates
@@ -70,8 +101,6 @@ vs = VideoStream(src=0).start()
 # fileStream = False
 time.sleep(1.0)
 
-
-sense = SenseHat()
 # loop over frames from the video stream
 while True:
     # if this is a file video stream, then we need to check if
@@ -136,8 +165,10 @@ while True:
                     cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
         cv2.putText(frame, "EAR: {:.2f}".format(ear), (300, 30),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
-    # SenseHat
-    sense.show_message(TOTAL)
+    # show digit
+    sense = SenseHat()
+    sense.clear()
+    show_number(TOTAL % 100, 200, 0, 60)
 
     # show the frame
     cv2.imshow("Frame", frame)
@@ -150,3 +181,4 @@ while True:
 # do a bit of cleanup
 cv2.destroyAllWindows()
 vs.stop()
+sense.clear()
