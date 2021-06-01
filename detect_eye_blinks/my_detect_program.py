@@ -14,6 +14,7 @@ import imutils
 import time
 import dlib
 import cv2
+import threading
 
 #### show_digit ####
 OFFSET_LEFT = 1
@@ -63,7 +64,6 @@ def eye_aspect_ratio(eye):
     # return the eye aspect ratio
     return ear
 
-
 # construct the argument parse and parse the arguments
 # ap = argparse.ArgumentParser()
 # ap.add_argument("-p", "--shape-predictor", required=True, help="path to facial landmark predictor")
@@ -80,6 +80,7 @@ EYE_AR_CONSEC_FRAMES = 2
 # initialize the frame counters and the total number of blinks
 COUNTER = 0
 TOTAL = 0
+TIMER = 0
 
 # initialize dlib's face detector (HOG-based) and then create
 # the facial landmark predictor
@@ -101,6 +102,7 @@ vs = VideoStream(src=0).start()
 # fileStream = False
 time.sleep(1.0)
 
+prev = time.time()
 # loop over frames from the video stream
 while True:
     # if this is a file video stream, then we need to check if
@@ -120,7 +122,13 @@ while True:
 
     # loop over the face detections
     for rect in rects:
-        # determine the facial landmarks for the face region, then
+    	# for timer
+	cur = time.time()
+	if cur-prev >= 1:
+	    prev = cur
+	    TIMER = TIMER + 1
+
+	# determine the facial landmarks for the face region, then
         # convert the facial landmark (x, y)-coordinates to a NumPy
         # array
         shape = predictor(gray, rect)
@@ -165,6 +173,10 @@ while True:
                     cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
         cv2.putText(frame, "EAR: {:.2f}".format(ear), (300, 30),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+	# show timer
+    	cv2.putText(frame, "SEC: {}".format(TIMER), (50, 30),
+	            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+    
     # show digit
     sense = SenseHat()
     sense.clear()
