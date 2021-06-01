@@ -102,6 +102,8 @@ vs = VideoStream(src=0).start()
 # fileStream = False
 time.sleep(1.0)
 
+sense = SenseHat()
+sense.clear()
 prev = time.time()
 # loop over frames from the video stream
 while True:
@@ -128,6 +130,23 @@ while True:
     # show timer
     cv2.putText(frame, "SEC: {}".format(TIMER), (30, 300),
 	        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 160, 0), 2)
+    # joystick
+    for event in sense.stick.get_events():
+        # Check if the joystick was pressed
+        if event.action == "pressed":
+	    if event.direction == "up":
+	        sense.show_letter("U")      # Up arrow
+            elif event.direction == "down":
+                sense.show_letter("D")      # Down arrow
+            elif event.direction == "left": 
+                sense.show_letter("L")      # Left arrow
+            elif event.direction == "right":
+        	sense.show_letter("R")      # Right arrow
+      	    elif event.direction == "middle":
+                sense.show_letter("M")      # Enter key
+	# Wait a while and then clear the screen
+        time.sleep(0.5)
+        sense.clear()
 
     # loop over the face detections
     for rect in rects:
@@ -184,8 +203,6 @@ while True:
                     cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 160, 0), 2)
     
     # show digit
-    sense = SenseHat()
-    sense.clear()
     show_number(TOTAL % 100, 0, 80, 0)
 
     # show the frame
