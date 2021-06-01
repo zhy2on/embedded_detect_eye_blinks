@@ -120,6 +120,15 @@ while True:
     # detect faces in the grayscale frame
     rects = detector(gray, 0)
 
+    # for timer
+    cur = time.time()
+    if cur-prev >= 1:
+	prev = cur
+	TIMER = TIMER + 1
+    # show timer
+    cv2.putText(frame, "SEC: {}".format(TIMER), (30, 300),
+	        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 160, 0), 2)
+
     # loop over the face detections
     for rect in rects:
     	# for timer
@@ -170,21 +179,19 @@ while True:
         # draw the total number of blinks on the frame along with
         # the computed eye aspect ratio for the frame
         cv2.putText(frame, "Blinks: {}".format(TOTAL), (10, 30),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 160, 0), 2)
         cv2.putText(frame, "EAR: {:.2f}".format(ear), (300, 30),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
-	# show timer
-    	cv2.putText(frame, "SEC: {}".format(TIMER), (50, 30),
-	            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 160, 0), 2)
     
     # show digit
     sense = SenseHat()
     sense.clear()
-    show_number(TOTAL % 100, 200, 0, 60)
+    show_number(TOTAL % 100, 0, 80, 0)
 
     # show the frame
     cv2.imshow("Frame", frame)
     key = cv2.waitKey(1) & 0xFF
+
 
     # if the `q` key was pressed, break from the loop
     if key == ord("q"):
