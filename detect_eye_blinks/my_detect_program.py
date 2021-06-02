@@ -15,6 +15,7 @@ import time
 import dlib
 import cv2
 import threading
+import pygame
 
 #### show_digit ####
 OFFSET_LEFT = 1
@@ -74,13 +75,20 @@ def eye_aspect_ratio(eye):
 # define two constants, one for the eye aspect ratio to indicate
 # blink and then a second constant for the number of consecutive
 # frames the eye must be below the threshold
-EYE_AR_THRESH = 0.28
+EYE_AR_THRESH = 0.3
 EYE_AR_CONSEC_FRAMES = 2
 
 # initialize the frame counters and the total number of blinks
 COUNTER = 0
 TOTAL = 0
+
+# initialize timer
 TIMER = 0
+cycle = 60 # default cycle is 1 minute
+
+# open sound
+pygame.mixer.init()
+bang = pygame.mixer.Sound("alarm/sounds_warning.wav")
 
 # initialize dlib's face detector (HOG-based) and then create
 # the facial landmark predictor
@@ -122,39 +130,53 @@ while True:
     # detect faces in the grayscale frame
     rects = detector(gray, 0)
 
+    # joystick
+    for event in sense.stick.get_events():
+        sense.clear()
+        # Check if the joystick was pressed
+        if event.action == "pressed":
+            if event.direction == "up":
+                if cycle <= 480:
+                    cycle += 120
+                show_number(cycle / 60, 0, 0, 255)
+            elif event.direction == "down":
+                if cycle >= 120:
+                    cycle -= 120
+                show_number(cycle / 60, 0, 0, 255)
+            elif event.direction == "left": 
+                if cycle >= 60:
+                    cycle -= 60
+                show_number(cycle / 60, 0, 0, 255)
+            elif event.direction == "right":
+                if cycle <= 540:
+                    cycle +=  60
+                show_number(cycle / 60, 0, 0, 255)
+            elif event.direction == "middle":
+                show_number(cycle / 60, 0, 0, 255)
+	    # Wait a while and then clear the screen
+        time.sleep(0.4)
+        sense.clear()
+
     # for timer
     cur = time.time()
     if cur-prev >= 1:
-	prev = cur
+        prev = cur
 	TIMER = TIMER + 1
+    if TIMER != 0 and TIMER % cycle == 0: # change to cycle
+        if TOTAL < cycle * 0.2: # change to (cycle / 60) * 12 = cycle * 0.2
+            bang.play()
+
     # show timer
     cv2.putText(frame, "SEC: {}".format(TIMER), (30, 300),
-	        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 160, 0), 2)
-    # joystick
-    for event in sense.stick.get_events():
-        # Check if the joystick was pressed
-        if event.action == "pressed":
-	    if event.direction == "up":
-	        sense.show_letter("U")      # Up arrow
-            elif event.direction == "down":
-                sense.show_letter("D")      # Down arrow
-            elif event.direction == "left": 
-                sense.show_letter("L")      # Left arrow
-            elif event.direction == "right":
-        	sense.show_letter("R")      # Right arrow
-      	    elif event.direction == "middle":
-                sense.show_letter("M")      # Enter key
-	# Wait a while and then clear the screen
-        time.sleep(0.5)
-        sense.clear()
-
+        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+    
     # loop over the face detections
     for rect in rects:
     	# for timer
-	cur = time.time()
-	if cur-prev >= 1:
-	    prev = cur
-	    TIMER = TIMER + 1
+        cur = time.time()
+        if cur-prev >= 1:
+	        prev = cur
+	        TIMER = TIMER + 1
 
 	# determine the facial landmarks for the face region, then
         # convert the facial landmark (x, y)-coordinates to a NumPy
@@ -198,9 +220,9 @@ while True:
         # draw the total number of blinks on the frame along with
         # the computed eye aspect ratio for the frame
         cv2.putText(frame, "Blinks: {}".format(TOTAL), (10, 30),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 160, 0), 2)
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
         cv2.putText(frame, "EAR: {:.2f}".format(ear), (300, 30),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 160, 0), 2)
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
     
     # show digit
     show_number(TOTAL % 100, 0, 80, 0)
