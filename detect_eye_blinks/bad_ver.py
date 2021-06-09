@@ -3,13 +3,13 @@ from imutils.video import VideoStream
 from imutils import face_utils
 from imutils.video import FPS
 from sense_hat import SenseHat
-#import numpy as np
-#import argparse
+import numpy as np
+import argparse
 import imutils
 import time
 import dlib
 import cv2
-#import threading
+import threading
 import pygame
 
 #### show_digit ####
@@ -56,8 +56,8 @@ def eye_aspect_ratio(eye):
     # return the eye aspect ratio
     return ear
 
-EYE_AR_THRESH = 0.28
-EYE_AR_CONSEC_FRAMES = 3
+EYE_AR_THRESH = 0.25
+EYE_AR_CONSEC_FRAMES = 2
 # initialize the frame counters and the total number of blinks
 COUNTER = 0
 TOTAL = 0
@@ -83,7 +83,7 @@ predictor = dlib.shape_predictor('shape_predictor_68_face_landmarks.dat')
 
 # start the video stream thread
 print("[INFO] starting video stream thread...")
-vs = VideoStream(src=0).start()
+cam = cv2.VideoCapture(0)
 time.sleep(1.0)
 
 sense = SenseHat()
@@ -97,7 +97,7 @@ while True:
     # grab the frame from the threaded video file stream, resize
     # it, and convert it to grayscale
     # channels)
-    frame = vs.read()
+    (grabbed,frame) = cam.read()
     frame = imutils.resize(frame, width=300)
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
@@ -211,5 +211,5 @@ while True:
 
 # do a bit of cleanup
 cv2.destroyAllWindows()
-vs.stop()
+cam.release()
 sense.clear()
