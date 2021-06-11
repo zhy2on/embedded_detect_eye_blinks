@@ -63,6 +63,7 @@ TOTAL = 0
 TIMER = 0
 cycle = 60 # default cycle is 1 minute
 bflag = 0
+ear = 0
 
 # open sound
 pygame.mixer.init()
@@ -84,9 +85,9 @@ time.sleep(1.0)
 sense = SenseHat()
 sense.clear()
 prev = time.time()
-fps = FPS().start()
+
 # loop over frames from the video stream
-while True:
+while True: 
     # for timer
     cur = time.time()
     if cur-prev >= 1:
@@ -98,13 +99,6 @@ while True:
         TOTAL = 0
         time.sleep(1)
         sense.clear()
-
-    frame = vs.read()
-    frame = imutils.resize(frame, width=300) # resize the frame
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
-    # detect faces in the grayscale frame
-    rects = detector(gray, 0)
 
     # joystick
     for event in sense.stick.get_events():
@@ -133,6 +127,14 @@ while True:
         sense.clear()
     if bflag:
         break
+    
+    fps = FPS().start()
+    frame = vs.read()
+    frame = imutils.resize(frame, width=300) # resize the frame
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+    # detect faces in the grayscale frame
+    rects = detector(gray, 0)
 
     # loop over the face detections
     for rect in rects:
@@ -167,13 +169,11 @@ while True:
         cv2.putText(frame, "EAR: {:.2f}".format(ear), (210, 30),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
         """
-        fps.update()
-        
-    # show digit
-    show_number(TOTAL % 100, 0, 80, 0)
-    # show fps
+    fps.update()
     fps.stop()
-
+    # show digit
+    show_number(TOTAL % 100, 0, 80, 0)    
+    
     """
     cv2.putText(frame, "FPS: {:.2f}".format(fps.fps()), (210, 90),
              cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)

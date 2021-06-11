@@ -61,7 +61,7 @@ TOTAL = 0
 # initialize timer
 TIMER = 0
 cycle = 60 # default cycle is 1 minute
-
+ear = 0
 bflag = 0
 
 # open sound
@@ -88,13 +88,12 @@ sense = SenseHat()
 sense.clear()
 prev = time.time()
 
-
-fps = FPS().start()
 # loop over frames from the video stream
 while True:
     # grab the frame from the threaded video file stream, resize
     # it, and convert it to grayscale
     # channels)
+    fps = FPS().start()
     (grabbed,frame) = cam.read()
     frame = imutils.resize(frame, width=300)
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -192,12 +191,10 @@ while True:
         #            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
         #cv2.putText(frame, "EAR: {:.2f}".format(ear), (210, 30),
         #            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
-        fps.update()
-        
+    fps.update()
+    fps.stop()
     # show digit
     show_number(TOTAL % 100, 0, 80, 0)
-    # show fps
-    fps.stop()
     #cv2.putText(frame, "FPS: {:.2f}".format(fps.fps()), (210, 90),
     #         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
     # show the frame
