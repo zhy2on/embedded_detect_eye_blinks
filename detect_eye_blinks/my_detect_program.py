@@ -80,7 +80,7 @@ predictor = dlib.shape_predictor('shape_predictor_68_face_landmarks.dat')
 # start the video stream thread
 print("[INFO] starting video stream thread...")
 vs = VideoStream(src=0).start()
-time.sleep(1.0)
+time.sleep(2.0)
 
 sense = SenseHat()
 sense.clear()
@@ -88,13 +88,12 @@ prev = time.time()
 
 # loop over frames from the video stream
 while True: 
-    # for timer
     cur = time.time()
     if cur-prev >= 1:
         prev = cur
         TIMER = TIMER + 1
-    if TIMER != 0 and (TIMER % 4 == 0):
-        if TOTAL < 2: # (cycle / 60) * 12 = cycle * 0.2
+    if TIMER != 0 and (TIMER % cycle == 0):
+        if TOTAL < cycle * 0.2: # (cycle / 60) * 12 = cycle * 0.2
             bang.play(1)
             time.sleep(1)
         TOTAL = 0
@@ -123,7 +122,6 @@ while True:
                 show_number(cycle / 60, 0, 0, 255)
             elif event.direction == "middle":
                 bflag = 1
-	    # Wait a while and then clear the screen
         time.sleep(0.4)
         sense.clear()
     if bflag:
@@ -173,7 +171,7 @@ while True:
     fps.update()
     fps.stop()
     # show digit
-    show_number(TOTAL % 100, 0, 80, 0)    
+    show_number(TOTAL, 0, 80, 0)    
     
     """
     cv2.putText(frame, "FPS: {:.2f}".format(fps.fps()), (210, 90),
