@@ -93,9 +93,10 @@ while True:
     if cur-prev >= 1:
         prev = cur
         TIMER = TIMER + 1
-    if TIMER != 0 and (TIMER % cycle == 0):
-        if TOTAL < cycle * 0.2: # (cycle / 60) * 12 = cycle * 0.2
+    if TIMER != 0 and (TIMER % 4 == 0):
+        if TOTAL < 2: # (cycle / 60) * 12 = cycle * 0.2
             bang.play(1)
+            time.sleep(1)
         TOTAL = 0
         time.sleep(1)
         sense.clear()
