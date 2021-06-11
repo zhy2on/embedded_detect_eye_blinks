@@ -9,7 +9,7 @@ import dlib
 import cv2
 import pygame
 
-#### show_digit ####
+#### show digit ####
 OFFSET_LEFT = 1
 OFFSET_TOP = 2
 
@@ -24,7 +24,6 @@ NUMS =[1,1,1,1,0,1,1,0,1,1,0,1,1,1,1,  # 0
        1,1,1,1,0,1,1,1,1,1,0,1,1,1,1,  # 8
        1,1,1,1,0,1,1,1,1,0,0,1,0,0,1]  # 9
 
-# Displays a single digit (0-9)
 def show_digit(val, xd, yd, r, g, b):
     offset = val * 15
     for p in range(offset, offset + 15):
@@ -32,7 +31,6 @@ def show_digit(val, xd, yd, r, g, b):
         yt = (p-offset) // 3
         sense.set_pixel(xt+xd, yt+yd, r*NUMS[p], g*NUMS[p], b*NUMS[p])
 
-# Displays a two-digits positive number (0-99)
 def show_number(val, r, g, b):
     sense.clear()
     abs_val = abs(val)
@@ -45,23 +43,23 @@ def show_number(val, r, g, b):
     if (abs_val > 9): show_digit(tens, OFFSET_LEFT, OFFSET_TOP, r, g, b)
     show_digit(units, OFFSET_LEFT+4, OFFSET_TOP, r, g, b)
 
-#### detect_py #####
+#### detect blink #####
 def eye_aspect_ratio(eye):
     A = dist.euclidean(eye[1], eye[5])
     B = dist.euclidean(eye[2], eye[4])
     C = dist.euclidean(eye[0], eye[3])
 
     ear = (A + B) / (2.0 * C)
-
     return ear
 
 EYE_AR_THRESH = 0.2
-EYE_AR_CONSEC_FRAMES = 3
+EYE_AR_CONSEC_FRAMES = 5
 
 # initialize the frame counters and the total number of blinks
 COUNTER = 0
 TOTAL = 0
 
+# initialize the timer, cycle, break flag
 TIMER = 0
 cycle = 60 # default cycle is 1 minute
 bflag = 0
@@ -102,7 +100,7 @@ while True:
         sense.clear()
 
     frame = vs.read()
-    frame = imutils.resize(frame, width=300)
+    frame = imutils.resize(frame, width=300) # resize the frame
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
     # detect faces in the grayscale frame
@@ -133,6 +131,8 @@ while True:
 	    # Wait a while and then clear the screen
         time.sleep(0.4)
         sense.clear()
+    if bflag:
+        break
 
     # loop over the face detections
     for rect in rects:
@@ -188,12 +188,7 @@ while True:
     print("TIME: {:d}".format(TIMER))
     print("FPS: {:.2f}".format(fps.fps()))
     print("TOTAL: {:d}".format(TOTAL))
-    print("cycle: {:d}".format(cycle))
-
     
-    if bflag:
-        break
-
 # do a bit of cleanup
 cv2.destroyAllWindows()
 vs.stop()
