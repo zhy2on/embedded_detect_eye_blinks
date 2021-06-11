@@ -1,15 +1,11 @@
 from scipy.spatial import distance as dist
-from imutils.video import VideoStream
 from imutils import face_utils
 from imutils.video import FPS
 from sense_hat import SenseHat
-import numpy as np
-import argparse
 import imutils
 import time
 import dlib
 import cv2
-import threading
 import pygame
 
 #### show_digit ####
@@ -56,8 +52,8 @@ def eye_aspect_ratio(eye):
     # return the eye aspect ratio
     return ear
 
-EYE_AR_THRESH = 0.25
-EYE_AR_CONSEC_FRAMES = 2
+EYE_AR_THRESH = 0.23
+EYE_AR_CONSEC_FRAMES = 3
 # initialize the frame counters and the total number of blinks
 COUNTER = 0
 TOTAL = 0
@@ -65,6 +61,8 @@ TOTAL = 0
 # initialize timer
 TIMER = 0
 cycle = 60 # default cycle is 1 minute
+
+bflag = 0
 
 # open sound
 pygame.mixer.init()
@@ -114,11 +112,11 @@ while True:
                     cycle += 120
                 show_number(cycle / 60, 0, 0, 255)
             elif event.direction == "down":
-                if cycle >= 120:
+                if cycle >= 240:
                     cycle -= 120
                 show_number(cycle / 60, 0, 0, 255)
             elif event.direction == "left": 
-                if cycle >= 60:
+                if cycle >= 120:
                     cycle -= 60
                 show_number(cycle / 60, 0, 0, 255)
             elif event.direction == "right":
@@ -126,7 +124,7 @@ while True:
                     cycle +=  60
                 show_number(cycle / 60, 0, 0, 255)
             elif event.direction == "middle":
-                show_number(cycle / 60, 0, 0, 255)
+                bflag = 1
 	    # Wait a while and then clear the screen
         time.sleep(0.4)
         sense.clear()
@@ -139,6 +137,7 @@ while True:
     if TIMER != 0 and TIMER % cycle == 0: # change to cycle
         if TOTAL < cycle * 0.2: # change to (cycle / 60) * 12 = cycle * 0.2
             bang.play()
+        TOTAL = 0
 
     # loop over the face detections
     for rect in rects:
@@ -189,24 +188,26 @@ while True:
 
         # draw the total number of blinks on the frame along with
         # the computed eye aspect ratio for the frame
-        cv2.putText(frame, "Blinks: {}".format(TOTAL), (10, 30),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
-        cv2.putText(frame, "EAR: {:.2f}".format(ear), (210, 30),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+        #cv2.putText(frame, "Blinks: {}".format(TOTAL), (10, 30),
+        #            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+        #cv2.putText(frame, "EAR: {:.2f}".format(ear), (210, 30),
+        #            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
         fps.update()
         
     # show digit
     show_number(TOTAL % 100, 0, 80, 0)
     # show fps
     fps.stop()
-    cv2.putText(frame, "FPS: {:.2f}".format(fps.fps()), (210, 90),
-             cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+    #cv2.putText(frame, "FPS: {:.2f}".format(fps.fps()), (210, 90),
+    #         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
     # show the frame
-    cv2.imshow("Frame", frame)
+    #cv2.imshow("Frame", frame)
     key = cv2.waitKey(1) & 0xFF
 
+    print(TIMER)
+    print("{:.2f}".format(fps.fps()))
     # if the `q` key was pressed, break from the loop
-    if key == ord("q"):
+    if bflag:
         break
 
 # do a bit of cleanup

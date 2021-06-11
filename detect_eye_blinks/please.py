@@ -7,21 +7,12 @@ import imutils
 import time
 import dlib
 import cv2
-from multiprocessing import Process
+from multiprocessing import Pool
 import pygame
 
-global bflag
-global sense
-global cycle
-
-bflag = 0
-sense = SenseHat()
-cycle = 60 # default cycle is 1 minute
 #### show_digit ####
 OFFSET_LEFT = 1
 OFFSET_TOP = 2
-
-TIMEnTOTAL = [0,0]
 
 NUMS =[1,1,1,1,0,1,1,0,1,1,0,1,1,1,1,  # 0
        0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,  # 1
@@ -50,50 +41,11 @@ def show_number(val, r, g, b):
   if (abs_val > 9): show_digit(tens, OFFSET_LEFT, OFFSET_TOP, r, g, b)
   show_digit(units, OFFSET_LEFT+4, OFFSET_TOP, r, g, b)
 
-#### sense hat part ####
-def proc_sense_hat_led():
-    sense.clear()
-    # show digit
-    show_number(TIMEnTOTAL[1] % 100, 0, 80, 0)
-    # joystick
-    for event in sense.stick.get_events():
-        sense.clear()
-        # Check if the joystick was pressed
-        if event.action == "pressed":
-            if event.direction == "up":
-                if cycle <= 480:
-                    cycle += 120
-                show_number(cycle / 60, 0, 0, 255)
-            elif event.direction == "down":
-                if cycle >= 120:
-                    cycle -= 120
-                show_number(cycle / 60, 0, 0, 255)
-            elif event.direction == "left": 
-                if cycle >= 60:
-                    cycle -= 60
-                show_number(cycle / 60, 0, 0, 255)
-            elif event.direction == "right":
-                if cycle <= 540:
-                    cycle +=  60
-                show_number(cycle / 60, 0, 0, 255)
-            elif event.direction == "middle":
-                bflag = 1
-	    # Wait a while and then clear the screen
-        time.sleep(0.4)
-        sense.clear()
-
-def proc_alarm_sound():
-    # open sound
-    pygame.mixer.init()
-    bang = pygame.mixer.Sound("alarm/sounds_warning.wav")
-    if TIMEnTOTAL[0] != 0 and TIMEnTOTAL[0] % cycle == 0: # change to cycle
-            if TIMEnTOTAL[1] < cycle * 0.2: # change to (cycle / 60) * 12 = cycle * 0.2
-                bang.play()
-
-#### detect part #####
+#### detect_py #####
 def eye_aspect_ratio(eye):
     A = dist.euclidean(eye[1], eye[5])
     B = dist.euclidean(eye[2], eye[4])
+
     C = dist.euclidean(eye[0], eye[3])
 
     # compute the eye aspect ratio
@@ -102,12 +54,28 @@ def eye_aspect_ratio(eye):
     # return the eye aspect ratio
     return ear
 
-def proc_display_frmae():
-    EYE_AR_THRESH = 0.28
+sense = SenseHat()
+def main():
+    num_cores = 4
+    Pool(num_cores)
+
+    EYE_AR_THRESH = 0.23
     EYE_AR_CONSEC_FRAMES = 3
     # initialize the frame counters and the total number of blinks
     COUNTER = 0
-    
+    TOTAL = 0
+
+    # initialize timer
+    TIMER = 0
+    cycle = 60 # default cycle is 1 minute
+
+    # initialize break flag
+    bflag = 0
+
+    # open sound
+    pygame.mixer.init()
+    bang = pygame.mixer.Sound("alarm/sounds_warning.wav")
+
     # initialize dlib's face detector (HOG-based) and then create
     # the facial landmark predictor
     print("[INFO] loading facial landmark predictor...")
@@ -123,7 +91,8 @@ def proc_display_frmae():
     print("[INFO] starting video stream thread...")
     vs = VideoStream(src=0).start()
     time.sleep(1.0)
-
+    
+    sense.clear()
     prev = time.time()
     fps = FPS().start()
     # loop over frames from the video stream
@@ -138,18 +107,51 @@ def proc_display_frmae():
         # detect faces in the grayscale frame
         rects = detector(gray, 0)
 
+        # joystick
+        for event in sense.stick.get_events():
+            sense.clear()
+            # Check if the joystick was pressed
+            if event.action == "pressed":
+                if event.direction == "up":
+                    if cycle <= 480:
+                        cycle += 120
+                    show_number(cycle / 60, 0, 0, 255)
+                elif event.direction == "down":
+                    if cycle >= 240:
+                        cycle -= 120
+                    show_number(cycle / 60, 0, 0, 255)
+                elif event.direction == "left": 
+                    if cycle >= 120:
+                        cycle -= 60
+                    show_number(cycle / 60, 0, 0, 255)
+                elif event.direction == "right":
+                    if cycle <= 540:
+                        cycle +=  60
+                    show_number(cycle / 60, 0, 0, 255)
+                elif event.direction == "middle":
+                    bflag = 1
+            # Wait a while and then clear the screen
+            time.sleep(0.4)
+            sense.clear()
+
         # for timer
         cur = time.time()
         if cur-prev >= 1:
             prev = cur
-        TIMEnTOTAL[0] = TIMEnTOTAL[0] + 1
+            TIMER = TIMER + 1
+        if TIMER != 0 and TIMER % cycle == 0: # change to cycle
+            if TOTAL < cycle * 0.2: # change to (cycle / 60) * 12 = cycle * 0.2
+                bang.play()
+            TOTAL = 0
+
         # loop over the face detections
         for rect in rects:
             # for timer
             cur = time.time()
             if cur-prev >= 1:
                 prev = cur
-                TIMEnTOTAL[0] = TIMEnTOTAL[0] + 1
+                TIMER = TIMER + 1
+
             # determine the facial landmarks for the face region, then
             # convert the facial landmark (x, y)-coordinates to a NumPy
             # arrayc
@@ -184,42 +186,39 @@ def proc_display_frmae():
                 # if the eyes were closed for a sufficient number of
                 # then increment the total number of blinks
                 if COUNTER >= EYE_AR_CONSEC_FRAMES:
-                    TIMEnTOTAL[1] += 1
+                    TOTAL += 1
 
                 # reset the eye frame counter
                 COUNTER = 0
 
             # draw the total number of blinks on the frame along with
             # the computed eye aspect ratio for the frame
-            cv2.putText(frame, "Blinks: {}".format(TIMEnTOTAL[1]), (10, 30),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
-            cv2.putText(frame, "EAR: {:.2f}".format(ear), (210, 30),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+            #cv2.putText(frame, "Blinks: {}".format(TOTAL), (10, 30),
+            #            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+            #cv2.putText(frame, "EAR: {:.2f}".format(ear), (210, 30),
+            #            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
             fps.update()
-        
+            
+        # show digit
+        show_number(TOTAL % 100, 0, 80, 0)
         # show fps
         fps.stop()
-        cv2.putText(frame, "FPS: {:.2f}".format(fps.fps()), (210, 90),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+        #cv2.putText(frame, "FPS: {:.2f}".format(fps.fps()), (210, 90),
+        #        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
         # show the frame
-        cv2.imshow("Frame", frame)
-        key = cv2.waitKey(1) & 0xFF
+        #cv2.imshow("Frame", frame)
+        #key = cv2.waitKey(1) & 0xFF
 
+        print(TIMER)
+        print("{:.2f}".format(fps.fps()))
         # if the `q` key was pressed, break from the loop
-        if (key == ord("q") or bflag):
+        if bflag:
             break
 
     # do a bit of cleanup
     cv2.destroyAllWindows()
     vs.stop()
+    sense.clear()
 
-if __name__ == '__main__':
-    p1 = Process(target=proc_sense_hat_led)
-    p2 = Process(target=proc_display_frmae)
-    p3 = Process(target=proc_alarm_sound)
-    p1.start()
-    p2.start()
-    p3.start()
-    p1.join()
-    p2.join()
-    p3.join()
+if __name__ == "__main__":
+    main()
