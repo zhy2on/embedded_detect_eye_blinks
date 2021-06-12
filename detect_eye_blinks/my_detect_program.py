@@ -34,13 +34,11 @@ def show_digit(val, xd, yd, r, g, b):
 def show_number(val, r, g, b):
     sense.clear()
     abs_val = abs(val)
-    hunds = (abs_val // 100) % 8
+    hunds = (abs_val // 100)
     tens = (abs_val % 100) / 10
     units = abs_val % 10
-    if (abs_val > 99):
-        for i in range(1, hunds + 1):
-            sense.set_pixel(8 - i, 0, 255,0,0)
-    if (abs_val > 9): show_digit(tens, OFFSET_LEFT, OFFSET_TOP, r, g, b)
+    if (abs_val > 99): sense.set_pixel(8 - hunds, 0, 255,0,0)
+    if (abs_val > 9 and tens): show_digit(tens, OFFSET_LEFT, OFFSET_TOP, r, g, b)
     show_digit(units, OFFSET_LEFT+4, OFFSET_TOP, r, g, b)
 
 #### detect blink #####
@@ -52,12 +50,12 @@ def eye_aspect_ratio(eye):
     ear = (A + B) / (2.0 * C)
     return ear
 
-EYE_AR_THRESH = 0.2
-EYE_AR_CONSEC_FRAMES = 5
+EYE_AR_THRESH = 0.25
+EYE_AR_CONSEC_FRAMES = 2
 
 # initialize the frame counters and the total number of blinks
 COUNTER = 0
-TOTAL = 0
+TOTAL = 198
 
 # initialize the timer, cycle, break flag
 TIMER = 0
@@ -94,6 +92,7 @@ while True:
         TIMER = TIMER + 1
     if TIMER != 0 and (TIMER % cycle == 0):
         if TOTAL < cycle * 0.2: # (cycle / 60) * 12 = cycle * 0.2
+            show_number(TOTAL,255,0,0)
             bang.play(1)
             time.sleep(1)
         TOTAL = 0
@@ -183,10 +182,10 @@ while True:
     if (key == ord("q") or bflag):
         break
     """
-    print("EAR: {:.2f}".format(ear))
+    #print("EAR: {:.2f}".format(ear))
     print("TIME: {:d}".format(TIMER))
-    print("FPS: {:.2f}".format(fps.fps()))
-    print("TOTAL: {:d}".format(TOTAL))
+    #print("FPS: {:.2f}".format(fps.fps()))
+    #print("TOTAL: {:d}".format(TOTAL))
     
 # do a bit of cleanup
 cv2.destroyAllWindows()
